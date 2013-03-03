@@ -1,0 +1,22 @@
+Scripting Languages (Comp3001) 
+Marinos Mavrommatis (mm1g10) 
+31 October 2012
+
+SCOPE
+The script assumes there exists at most one pdf and one doc datasheet for each product and that they are both in the same directory.
+This script ignores non-regular files (eg. symbolic links) and assumes datasheets have the correct file extention.
+
+DESIGN
+Mainly focused on exploring the power of (standard) perl, keeping code readable and maintainable. Attempted to find the right balance between lines of code, memory footprint and time complexity. For example, in the subroutine extract_dual (which iterates over one hash and queries an other), adding one line of code allows determining which of the two hashes is the smallest.
+A log file can be huge, so it is a bad idea to load the whole file in memory. Loading only one line at a time solves this problem but means keeping hold of the file for longer.
+The script uses the latter approach but ensures overall execution time is kept low.
+The main bottleneck of the system at the moment is the regular expression that matches GET requests for datasheets. This can be solved either by making the regular expression less greedy or replacing it with other forms of string manipulation (eg. substr). Both of these approaches make the code much less readable with little benefit, since execution time is less than a second with a 10MB log file.
+For choosing datastructures, it was clear from the beginning that hashes were the best option (out of the data structures standard Perl provides). Later it also became clear that almost the whole path of each file needed to be stored but only the filename needed to be hashed. The most obvious way to approach this is to store the filename as the key and the rest of the path as the value. This results in storing the same string (which could be big) for each file in each directory. That is where @dirs comes in. Each directory opened is stored in @dirs and each filename kept in %pdf and %doc points to the index of its containing directory in @dirs. Further optimisation (eg avoid storing directories that don't contain any datasheets) would increase lines of code with only little benefit. Constructing %dual (the hash that keeps dual formated datasheets) could have been done while creating %pdf and %doc. Moving it into a different subroutine however, reduces coupling and avoids unnecessary computation in case in_both is not checked and log count is not requested. Furthermore, when constructing %dual, entries are moved instead of copied from other hashes. This means that overall memory needed is kept at the size of max(%pdf,%doc).
+
+IMPLEMENTATION DETAILS
+To avoid checking whether the user has put a "/" at the end of the given datasheets directory, a "/" is always appended, since Linux directories can work with double forward slashes.
+Also, dots (just like any other character) are allowed in filenames since the regular exressions used to match filenames and extentions are greedy and thus always match the last dot found.
+The subroutines are kept short and chains of blocks (eg. for{ if{ for{...}}}) are avoided to increase readability and maintainability.
+
+DIFFICULT
+It is difficult to make typeglobs work with the strict pragma so references to hashes are used instead (eg. when determining %small and %big)

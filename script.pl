@@ -18,8 +18,7 @@ my $pdf_re = qr/pdf$/i;
 &end_the_html;
 
 sub display_results{
-  print hr;
-
+	print hr;
 	my %selected_types = map {$_ => undef} param('target_filetypes');
 	my $both = exists($selected_types{'in_both'});
 	my $count = param('count_requests');
